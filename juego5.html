@@ -1,0 +1,172 @@
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-sans); }
+.game-wrap { padding: 1.5rem 0; }
+.header { text-align: center; margin-bottom: 1.5rem; }
+.header h2 { font-size: 20px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 6px; }
+.header p { font-size: 14px; color: var(--color-text-secondary); }
+.instruction { background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 10px 16px; font-size: 13px; color: var(--color-text-secondary); text-align: center; margin-bottom: 1.5rem; }
+.scenes-area { display: flex; flex-direction: column; gap: 10px; margin-bottom: 1.5rem; }
+.scene-card {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--color-background-primary);
+  border: 1.5px solid var(--color-border-tertiary);
+  border-radius: var(--border-radius-lg);
+  padding: 14px 16px;
+  cursor: grab;
+  transition: border-color 0.2s, background 0.2s;
+  user-select: none;
+}
+.scene-card:active { cursor: grabbing; }
+.scene-card.dragging { opacity: 0.4; border-color: #7F77DD; }
+.scene-card.drag-over { border-color: #7F77DD; background: #EEEDFE; }
+.scene-card.correct { border-color: #1D9E75; background: #E1F5EE; }
+.scene-card.wrong { border-color: #E24B4A; background: #FCEBEB; }
+.drag-handle { font-size: 20px; color: var(--color-text-secondary); flex-shrink: 0; }
+.scene-num {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--color-background-secondary);
+  border: 0.5px solid var(--color-border-tertiary);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 500; color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+.scene-emoji { font-size: 28px; flex-shrink: 0; }
+.scene-text { font-size: 14px; color: var(--color-text-primary); line-height: 1.5; flex: 1; }
+.scene-text strong { font-weight: 500; font-size: 13px; color: var(--color-text-secondary); display: block; margin-bottom: 2px; }
+.btn-row { display: flex; gap: 10px; justify-content: center; margin-bottom: 1.5rem; }
+button { font-family: var(--font-sans); font-size: 14px; padding: 8px 20px; border-radius: var(--border-radius-md); cursor: pointer; border: 0.5px solid var(--color-border-secondary); background: transparent; color: var(--color-text-primary); transition: background 0.15s; }
+button:hover { background: var(--color-background-secondary); }
+button.primary { background: #534AB7; color: #EEEDFE; border-color: #534AB7; }
+button.primary:hover { background: #3C3489; }
+.result-box { border-radius: var(--border-radius-lg); padding: 16px; text-align: center; margin-bottom: 1rem; border: 0.5px solid var(--color-border-tertiary); }
+.result-box.success { background: #E1F5EE; border-color: #1D9E75; }
+.result-box.fail { background: #FAECE7; border-color: #D85A30; }
+.result-box h3 { font-size: 18px; font-weight: 500; margin-bottom: 6px; }
+.result-box.success h3 { color: #085041; }
+.result-box.fail h3 { color: #4A1B0C; }
+.result-box p { font-size: 14px; }
+.result-box.success p { color: #0F6E56; }
+.result-box.fail p { color: #993C1D; }
+.score { font-size: 15px; font-weight: 500; color: var(--color-text-primary); text-align: center; margin-bottom: 1rem; }
+</style>
+
+<div class="game-wrap">
+  <h2 class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden">Juego: ordena las escenas del cuento de Etsa</h2>
+  <div class="header">
+    <h2>Ordena el cuento de Etsa</h2>
+    <p>Arrastra las escenas para ponerlas en el orden correcto</p>
+  </div>
+  <div class="instruction"><i class="ti ti-arrows-up-down" aria-hidden="true"></i> Arrastra cada tarjeta hacia arriba o hacia abajo hasta ordenar la historia</div>
+  <div class="scenes-area" id="scenesArea"></div>
+  <div class="btn-row">
+    <button class="primary" onclick="checkOrder()"><i class="ti ti-check"></i> Verificar orden</button>
+    <button onclick="shuffleAndReset()"><i class="ti ti-refresh"></i> Mezclar</button>
+  </div>
+  <div id="resultBox"></div>
+</div>
+
+<script>
+const SCENES = [
+  { id:1, emoji:"🌿", title:"El espíritu Iwia", text:"Iwia, un espíritu maléŸvolo, atrapa a los shuar y los devora. Captura a una pareja de humanos pero deja con vida a su pequeño hijo, Etsa." },
+  { id:2, emoji:"🌞", title:"Etsa crece con un don", text:"Etsa crece creyendo que Iwia es su padre. Los dioses le dan un don: es el señor de los animales diurnos y puede transformarse en cualquier criatura del día." },
+  { id:3, emoji:"🏹", title:"Etsa caza para Iwia", text:"Cada día, Etsa sale a cazar para Iwia. Poco a poco, los animales dejan de cantar. Solo Yápankam, una palomita blanca, sigue cantando escondida." },
+  { id:4, emoji:"🕊️", title:"La verdad de Yápankam", text:"Una noche, Yápankam le revela la verdad a Etsa: Iwia no es su padre, sino quien devoró a sus verdaderos padres. Etsa llora y grita de furia." },
+  { id:5, emoji:"🐦", title:"Etsa renace las aves", text:"Etsa recoge plumas, las pone en su bodoquera y sopla con la fuerza del Sol. Miles de aves renacen y sus cantos llenan la selva de colores y sonidos." },
+  { id:6, emoji:"👨‍🏫", title:"Etsa, maestro de la comunidad", text:"Después de muchos años, Etsa se convierte en maestro. Conoce a Kujancham, un joven cazador impaciente y desobediente que rompe el equilibrio." },
+  { id:7, emoji:"🍎", title:"El fruto prohibido", text:"Kujancham come del fruto prohibido del árbol de numpi. Etsa le pregunta con tristeza: '¿Por qué lo hiciste? ¡Has roto el equilibrio!'" },
+  { id:8, emoji:"☀️", title:"Etsa sube al cielo", text:"Etsa sube al cielo por última vez y corta la escalera de bejuco. Desde ese día, el Sol quedó arriba, vigilando desde lo alto." },
+  { id:9, emoji:"🌄", title:"Moraleja", text:"Cada amanecer, Etsa convertido en Sol recuerda su promesa: 'Nadie debe romper la armonía de la selva. Cada ser merece vivir.'" },
+];
+
+let current = [];
+
+function shuffle(arr) {
+  let a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function shuffleAndReset() {
+  current = shuffle(SCENES);
+  document.getElementById('resultBox').innerHTML = '';
+  render();
+}
+
+function render() {
+  const area = document.getElementById('scenesArea');
+  area.innerHTML = '';
+  current.forEach((scene, idx) => {
+    const card = document.createElement('div');
+    card.className = 'scene-card';
+    card.draggable = true;
+    card.dataset.idx = idx;
+    card.innerHTML = `
+      <i class="ti ti-grip-vertical drag-handle" aria-hidden="true"></i>
+      <div class="scene-num">${idx + 1}</div>
+      <div class="scene-emoji">${scene.emoji}</div>
+      <div class="scene-text"><strong>${scene.title}</strong>${scene.text}</div>
+    `;
+    card.addEventListener('dragstart', onDragStart);
+    card.addEventListener('dragover', onDragOver);
+    card.addEventListener('drop', onDrop);
+    card.addEventListener('dragend', onDragEnd);
+    area.appendChild(card);
+  });
+}
+
+let dragIdx = null;
+
+function onDragStart(e) {
+  dragIdx = +e.currentTarget.dataset.idx;
+  e.currentTarget.classList.add('dragging');
+}
+function onDragOver(e) {
+  e.preventDefault();
+  document.querySelectorAll('.scene-card').forEach(c => c.classList.remove('drag-over'));
+  e.currentTarget.classList.add('drag-over');
+}
+function onDrop(e) {
+  e.preventDefault();
+  const dropIdx = +e.currentTarget.dataset.idx;
+  if (dragIdx !== null && dragIdx !== dropIdx) {
+    const tmp = current[dragIdx];
+    current[dragIdx] = current[dropIdx];
+    current[dropIdx] = tmp;
+    document.getElementById('resultBox').innerHTML = '';
+    render();
+  }
+}
+function onDragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+  document.querySelectorAll('.scene-card').forEach(c => c.classList.remove('drag-over'));
+  dragIdx = null;
+}
+
+function checkOrder() {
+  let correct = 0;
+  const cards = document.querySelectorAll('.scene-card');
+  cards.forEach((card, idx) => {
+    card.classList.remove('correct', 'wrong');
+    if (current[idx].id === SCENES[idx].id) {
+      card.classList.add('correct');
+      correct++;
+    } else {
+      card.classList.add('wrong');
+    }
+  });
+  const total = SCENES.length;
+  const box = document.getElementById('resultBox');
+  if (correct === total) {
+    box.innerHTML = `<div class="result-box success"><h3>¡Excelente! Orden perfecto</h3><p>Ordenaste las ${total} escenas correctamente. ¡Conoces muy bien la historia de Etsa!</p></div>`;
+  } else {
+    box.innerHTML = `<div class="result-box fail"><h3>${correct} de ${total} correctas</h3><p>Las tarjetas en verde están bien. Sigue intentando con las rojas.</p></div>`;
+  }
+}
+
+shuffleAndReset();
+</script>

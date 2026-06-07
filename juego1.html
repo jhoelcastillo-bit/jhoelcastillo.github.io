@@ -1,0 +1,157 @@
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Cinzel:wght@400;700&display=swap');
+  .qz { font-family: 'IM Fell English', serif; padding: 1rem 0; max-width: 600px; margin: 0 auto; }
+  .qz-title { font-family: 'Cinzel', serif; text-align: center; font-size: 22px; color: #6b2d0f; letter-spacing: 2px; margin-bottom: 4px; }
+  .qz-sub { text-align: center; font-size: 13px; color: #8b6045; font-style: italic; margin-bottom: 1.2rem; }
+  .qz-progress-bar { height: 6px; background: #e8d5b0; border-radius: 3px; margin-bottom: 1rem; overflow: hidden; }
+  .qz-progress-fill { height: 100%; background: #8b3a12; border-radius: 3px; transition: width 0.4s ease; }
+  .qz-progress-text { text-align: right; font-family: 'Cinzel', serif; font-size: 11px; color: #8b6045; margin-top: 2px; margin-bottom: 1rem; }
+  .qz-card { background: #fdf5e6; border: 2px solid #8b5e3c; border-radius: 10px; padding: 1.4rem 1.6rem; box-shadow: inset 0 0 16px rgba(120,70,20,0.1); }
+  .qz-qnum { font-family: 'Cinzel', serif; font-size: 11px; color: #8b6045; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
+  .qz-question { font-size: 17px; color: #3a1500; line-height: 1.5; margin-bottom: 1.2rem; font-weight: bold; }
+  .qz-options { display: flex; flex-direction: column; gap: 10px; }
+  .qz-opt { display: flex; align-items: flex-start; gap: 10px; background: #f5e9d0; border: 1.5px solid #c8a070; border-radius: 6px; padding: 10px 14px; cursor: pointer; font-size: 14.5px; color: #4a2000; transition: background 0.2s, border-color 0.2s; line-height: 1.4; }
+  .qz-opt:hover:not(.disabled) { background: #ffe9a0; border-color: #8b3a12; }
+  .qz-opt.correct { background: #c8e6c9; border-color: #2e7d32; color: #1b5e20; }
+  .qz-opt.wrong { background: #ffcdd2; border-color: #c62828; color: #b71c1c; }
+  .qz-opt.disabled { cursor: default; }
+  .qz-opt .letter { font-family: 'Cinzel', serif; font-weight: 700; font-size: 13px; min-width: 18px; }
+  .qz-feedback { margin-top: 1rem; font-size: 13px; font-style: italic; color: #5a3010; min-height: 36px; padding: 8px 12px; border-radius: 6px; background: rgba(139,94,60,0.1); line-height: 1.5; }
+  .qz-feedback:empty { padding: 0; background: none; }
+  .qz-btns { display: flex; justify-content: center; margin-top: 1.2rem; }
+  .qz-btn { font-family: 'Cinzel', serif; font-size: 13px; padding: 8px 22px; border: 1.5px solid #8b5e3c; background: #6b2d0f; color: #fdf5e6; border-radius: 5px; cursor: pointer; letter-spacing: 1px; }
+  .qz-btn:hover { background: #8b3a12; }
+  .qz-final { text-align: center; padding: 2rem 1rem; }
+  .qz-final-score { font-family: 'Cinzel', serif; font-size: 40px; color: #6b2d0f; margin-bottom: 8px; }
+  .qz-final-msg { font-size: 16px; color: #4a2000; font-style: italic; line-height: 1.6; margin-bottom: 1.2rem; }
+  .qz-stars { font-size: 30px; letter-spacing: 4px; margin-bottom: 1rem; }
+  .qz-ornament { text-align: center; color: #8b5e3c; font-size: 18px; letter-spacing: 6px; margin-bottom: 0.8rem; }
+</style>
+<div class="qz">
+  <h2 class="qz-title">✦ Preguntas & Reflexión ✦</h2>
+  <p class="qz-sub">La Leyenda de la Virgen del Rosario de Tumianuma</p>
+  <div class="qz-progress-bar"><div class="qz-progress-fill" id="pbar"></div></div>
+  <div class="qz-progress-text" id="ptext"></div>
+  <div id="qz-main"></div>
+</div>
+<script>
+const questions = [
+  {
+    q: '¿En qué río fue encontrada la imagen de la Virgen del Rosario?',
+    opts: ['Río Jubones','Río Piscobamba','Río Catamayo','Río Arenillas'],
+    ans: 1,
+    fb: 'Correcto. Cuando el río Piscobamba se calmó, entre sus riveras y escombros fue hallada la pequeña y resplandeciente imagen.'
+  },
+  {
+    q: '¿Cómo era el barrio de Tumianuma en aquellos tiempos antiguos?',
+    opts: ['Una ciudad grande con iglesias de piedra','Un puerto activo con comerciantes','Un conjunto de casitas de paja entre piñones y montes','Una aldea de mineros con calles pavimentadas'],
+    ans: 2,
+    fb: 'Así es. Tumianuma era apenas un conjunto de casitas de paja entre piñones y montes, donde la gente vivía con sencillez y profunda fe.'
+  },
+  {
+    q: '¿Quién fue el misterioso hombre que pidió una sábana para recoger a la Virgen con dignidad?',
+    opts: ['El sacerdote del pueblo','Hipólito Retete','El alcalde de Piñas','Un hombre llamado "Espíritu"'],
+    ans: 3,
+    fb: 'Exacto. Era conocido solo como "Espíritu", un hombre de quien muchos no sabían de dónde venía, pero que era reconocido por su sabiduría y fe.'
+  },
+  {
+    q: '¿Con qué materiales el pueblo construyó la primera pequeña capilla?',
+    opts: ['Cemento y ladrillo','Palitos y madera del río, barro y caña','Piedra tallada y adobe','Bambú y tejas importadas'],
+    ans: 1,
+    fb: 'Correcto. Sin recursos, pero abundando en fe, iban al río a traer palitos y madera. Barro, caña, sudor y esperanza se mezclaron en esa construcción hecha con el alma del pueblo.'
+  },
+  {
+    q: '¿En qué fecha se celebra cada año la fiesta en honor a la Virgen del Rosario?',
+    opts: ['12 de octubre','25 de diciembre','15 de agosto','8 de septiembre'],
+    ans: 2,
+    fb: 'Así es. Cada 15 de agosto el barrio se viste de fe, música, incienso y oración. Una devoción que no se ha apagado y se renueva con más fuerza cada año.'
+  },
+  {
+    q: '¿En qué lugar fue instalada temporalmente la Virgen cuando se construía la capillita de Palito?',
+    opts: ['En la casa del alcalde','En la capilla de Debek, en un cuarto de Hipólito Retete','En la iglesia de Piñas','Bajo un árbol de piñón sagrado'],
+    ans: 1,
+    fb: 'Correcto. Se construyó la capilla de Debek de palo y barro. Allí fue instalada la Virgen en un cuarto que pertenecía a Hipólito Retete, un devoto vecino.'
+  },
+  {
+    q: '¿Qué hacía la comunidad cuando alguien fallecía en aquellos tiempos sencillos?',
+    opts: ['Realizaban grandes ceremonias con música','Alumbraban el camino con mecheros y acompañaban en silencio','Esperaban al sacerdote de la ciudad','Tocaban las campanas de la capilla toda la noche'],
+    ans: 1,
+    fb: 'Así describe el relato la vida sencilla pero unida de aquel tiempo: cuando alguien fallecía, se alumbraba el camino con mecheros y unas cuantas personas acompañaban en silencio.'
+  },
+  {
+    q: '¿Cuál es la moraleja principal de esta leyenda?',
+    opts: ['El dinero y los recursos son lo más importante para construir algo grande','Lo que vale es cuánto amor y fe se pone en lo que se construye con el alma','Solo los milagros pueden unir a un pueblo','La naturaleza siempre destruye lo que el hombre construye'],
+    ans: 1,
+    fb: 'Hermoso mensaje. "No importa cuánto se tenga, sino cuánto amor y fe se pone en lo que se construye con el alma." — Esa es la esencia de esta leyenda de Tumianuma.'
+  }
+];
+
+let current = 0, score = 0, answered = false;
+
+function render() {
+  const total = questions.length;
+  document.getElementById('pbar').style.width = `${(current/total)*100}%`;
+  document.getElementById('ptext').textContent = current < total ? `Pregunta ${current+1} de ${total}` : '';
+  if (current >= total) { showFinal(); return; }
+  const q = questions[current];
+  const letters = ['A','B','C','D'];
+  document.getElementById('qz-main').innerHTML = `
+    <div class="qz-card">
+      <div class="qz-qnum">Pregunta ${current+1}</div>
+      <div class="qz-question">${q.q}</div>
+      <div class="qz-options" id="opts">
+        ${q.opts.map((o,i)=>`<div class="qz-opt" id="opt${i}" onclick="choose(${i})"><span class="letter">${letters[i]}.</span>${o}</div>`).join('')}
+      </div>
+      <div class="qz-feedback" id="fb"></div>
+    </div>
+    <div class="qz-btns"><button class="qz-btn" id="nextbtn" onclick="next()" style="display:none">Siguiente pregunta →</button></div>
+  `;
+  answered = false;
+}
+
+function choose(idx) {
+  if (answered) return;
+  answered = true;
+  const q = questions[current];
+  for (let i = 0; i < q.opts.length; i++) {
+    const el = document.getElementById('opt'+i);
+    el.classList.add('disabled');
+    if (i === q.ans) el.classList.add('correct');
+    else if (i === idx && i !== q.ans) el.classList.add('wrong');
+  }
+  if (idx === q.ans) score++;
+  document.getElementById('fb').textContent = q.fb;
+  document.getElementById('nextbtn').style.display = 'block';
+}
+
+function next() {
+  current++;
+  render();
+}
+
+function showFinal() {
+  const pct = Math.round((score/questions.length)*100);
+  let stars = '', msg = '';
+  if (pct === 100) { stars='✦✦✦✦✦'; msg='¡Perfecto! Conoces esta leyenda con el corazón. La fe y la memoria de Tumianuma viven en ti.'; }
+  else if (pct >= 75) { stars='✦✦✦✦☆'; msg='¡Muy bien! La Virgencita está complacida con tu conocimiento y devoción.'; }
+  else if (pct >= 50) { stars='✦✦✦☆☆'; msg='Buen esfuerzo. Hay detalles del relato que merecen ser releídos con calma y fe.'; }
+  else { stars='✦✦☆☆☆'; msg='No te desanimes. Lee de nuevo el cuento y la historia de Tumianuma te tocará el alma.'; }
+
+  document.getElementById('pbar').style.width = '100%';
+  document.getElementById('ptext').textContent = '';
+  document.getElementById('qz-main').innerHTML = `
+    <div class="qz-card qz-final">
+      <div class="qz-ornament">✦ ✦ ✦</div>
+      <div class="qz-final-score">${score}/${questions.length}</div>
+      <div class="qz-stars">${stars}</div>
+      <div class="qz-final-msg">${msg}</div>
+      <div class="qz-ornament">✦ ✦ ✦</div>
+      <div class="qz-btns" style="margin-top:1rem"><button class="qz-btn" onclick="restart()">Jugar de nuevo</button></div>
+    </div>
+  `;
+}
+
+function restart() { current = 0; score = 0; answered = false; render(); }
+render();
+</script>
